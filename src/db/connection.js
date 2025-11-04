@@ -77,15 +77,57 @@ async function initSchema() {
   const schemaPath = path.join(__dirname, 'schema.sql');
   const schema = fs.readFileSync(schemaPath, 'utf8');
   
-  // Split by semicolon and execute each statement separately
+  // Remove comments and split into statements
   const statements = schema
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0 && !line.startsWith('--'))
+    .join('\n')
     .split(';')
     .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('--'));
+    .filter(s => s.length > 0);
+  
+  // Separate CREATE TABLE and CREATE INDEX statements
+  const createTableStatements = [];
+  const createIndexStatements = [];
   
   for (const statement of statements) {
-    if (statement.trim()) {
+    const upper = statement.toUpperCase();
+    if (upper.startsWith('CREATE TABLE')) {
+      createTableStatements.push(statement);
+    } else if (upper.startsWith('CREATE INDEX')) {
+      createIndexStatements.push(statement);
+    } else {
+      // Other statements (like ALTER TABLE, etc.)
+      createTableStatements.push(statement);
+    }
+  }
+  
+  // First, create all tables
+  console.log('[testing] Creating tables...');
+  for (const statement of createTableStatements) {
+    try {
       await query(statement);
+    } catch (error) {
+      // If table already exists, that's okay (CREATE TABLE IF NOT EXISTS)
+      if (error.code !== '42P07') {
+        console.error(`[testing] Error creating table: ${error.message}`);
+        throw error;
+      }
+    }
+  }
+  
+  // Then, create all indexes
+  console.log('[testing] Creating indexes...');
+  for (const statement of createIndexStatements) {
+    try {
+      await query(statement);
+    } catch (error) {
+      // If index already exists or table doesn't exist yet, that's okay
+      if (error.code !== '42P07' && error.code !== '42P01') {
+        console.error(`[testing] Error creating index: ${error.message}`);
+        throw error;
+      }
     }
   }
   
