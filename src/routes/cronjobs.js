@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     const cronjobs = await cronjobService.getAllCronjobs();
     res.json(cronjobs);
   } catch (error) {
-    console.error('[testing] Error fetching cronjobs:', error);
+    console.error('Error fetching cronjobs:', error);
     res.status(500).json({ error: 'Failed to fetch cronjobs' });
   }
 });
@@ -30,7 +30,7 @@ router.get('/:id', async (req, res) => {
     
     res.json(cronjob);
   } catch (error) {
-    console.error('[testing] Error fetching cronjob:', error);
+    console.error('Error fetching cronjob:', error);
     res.status(500).json({ error: 'Failed to fetch cronjob' });
   }
 });
@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
     
     res.status(201).json(cronjob);
   } catch (error) {
-    console.error('[testing] Error creating cronjob:', error);
+    console.error('Error creating cronjob:', error);
     res.status(500).json({ error: 'Failed to create cronjob' });
   }
 });
@@ -86,7 +86,7 @@ router.put('/:id', async (req, res) => {
     
     res.json(cronjob);
   } catch (error) {
-    console.error('[testing] Error updating cronjob:', error);
+    console.error('Error updating cronjob:', error);
     res.status(500).json({ error: 'Failed to update cronjob' });
   }
 });
@@ -109,7 +109,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ message: 'Cronjob deleted successfully' });
   } catch (error) {
-    console.error('[testing] Error deleting cronjob:', error);
+    console.error('Error deleting cronjob:', error);
     res.status(500).json({ error: 'Failed to delete cronjob' });
   }
 });
@@ -125,7 +125,7 @@ router.get('/:id/executions', async (req, res) => {
     const executions = await cronjobService.getExecutionHistory(id, limit);
     res.json(executions);
   } catch (error) {
-    console.error('[testing] Error fetching execution history:', error);
+    console.error('Error fetching execution history:', error);
     res.status(500).json({ error: 'Failed to fetch execution history' });
   }
 });

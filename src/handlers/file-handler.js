@@ -9,8 +9,6 @@ const { query } = require('../db/connection');
  * @returns {Promise<void>}
  */
 async function processFile(filePath, fileId) {
-  console.log(`[testing] Processing file: ${filePath} (ID: ${fileId})`);
-
   const ext = path.extname(filePath).toLowerCase();
   const filename = path.basename(filePath);
 
@@ -30,10 +28,8 @@ async function processFile(filePath, fileId) {
         await handleGenericFile(filePath, fileId);
         break;
     }
-
-    console.log(`[testing] File processing completed: ${filename}`);
   } catch (error) {
-    console.error(`[testing] Error in processFile for ${filename}:`, error);
+    console.error(`Error processing file ${filename}:`, error);
     throw error;
   }
 }
@@ -58,7 +54,7 @@ async function handleJsonFile(filePath, fileId) {
     [JSON.stringify(metadata), fileId]
   );
 
-  console.log(`[testing] JSON file processed: ${metadata.recordCount} records`);
+  // JSON file processed
 }
 
 /**
@@ -85,7 +81,7 @@ async function handleCsvFile(filePath, fileId) {
     [JSON.stringify(metadata), fileId]
   );
 
-  console.log(`[testing] CSV file processed: ${metadata.lineCount} lines`);
+  // CSV file processed
 }
 
 /**
@@ -109,7 +105,7 @@ async function handleTextFile(filePath, fileId) {
     [JSON.stringify(metadata), fileId]
   );
 
-  console.log(`[testing] Text file processed: ${metadata.lineCount} lines`);
+  // Text file processed
 }
 
 /**
@@ -130,7 +126,7 @@ async function handleGenericFile(filePath, fileId) {
     [JSON.stringify(metadata), fileId]
   );
 
-  console.log(`[testing] Generic file processed: ${path.basename(filePath)}`);
+  // Generic file processed
 }
 
 module.exports = {

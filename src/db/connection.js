@@ -19,7 +19,7 @@ function initPool(connectionString) {
       throw new Error('DATABASE_URL environment variable is not set. Please configure it in Railway.');
     }
     
-    console.log('[testing] Connecting to database:', dbUrl.replace(/:[^:@]+@/, ':****@')); // Hide password in logs
+    // Database connection initialized
     
     pool = new Pool({
       connectionString: dbUrl,
@@ -29,7 +29,7 @@ function initPool(connectionString) {
     });
 
     pool.on('error', (err) => {
-      console.error('[testing] Unexpected error on idle client', err);
+      console.error('Unexpected error on idle client', err);
       process.exit(-1);
     });
   }
@@ -55,14 +55,14 @@ function getPool() {
  */
 async function query(text, params) {
   const dbPool = getPool();
-  const start = Date.now();
   try {
     const res = await dbPool.query(text, params);
-    const duration = Date.now() - start;
-    console.log('[testing] Executed query', { text, duration, rows: res.rowCount });
     return res;
   } catch (error) {
-    console.error('[testing] Query error', { text, error: error.message });
+    // Only log non-expected errors (not schema initialization duplicates)
+    if (error.code !== '42P07' && error.code !== '42P01') {
+      console.error('Database query error:', error.message);
+    }
     throw error;
   }
 }
@@ -104,34 +104,30 @@ async function initSchema() {
   }
   
   // First, create all tables
-  console.log('[testing] Creating tables...');
   for (const statement of createTableStatements) {
     try {
       await query(statement);
     } catch (error) {
       // If table already exists, that's okay (CREATE TABLE IF NOT EXISTS)
       if (error.code !== '42P07') {
-        console.error(`[testing] Error creating table: ${error.message}`);
+        console.error(`Error creating table: ${error.message}`);
         throw error;
       }
     }
   }
   
   // Then, create all indexes
-  console.log('[testing] Creating indexes...');
   for (const statement of createIndexStatements) {
     try {
       await query(statement);
     } catch (error) {
       // If index already exists or table doesn't exist yet, that's okay
       if (error.code !== '42P07' && error.code !== '42P01') {
-        console.error(`[testing] Error creating index: ${error.message}`);
+        console.error(`Error creating index: ${error.message}`);
         throw error;
       }
     }
   }
-  
-  console.log('[testing] Database schema initialized');
 }
 
 module.exports = {

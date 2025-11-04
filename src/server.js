@@ -45,13 +45,15 @@ async function waitForDatabase(maxRetries = 30, delayMs = 2000) {
       const testPool = initPool();
       const client = await testPool.connect();
       client.release();
-      console.log('[testing] Database connection successful');
       return true;
     } catch (error) {
       if (i === maxRetries - 1) {
         throw error;
       }
-      console.log(`[testing] Database not ready, retrying in ${delayMs}ms... (attempt ${i + 1}/${maxRetries})`);
+      // Only log on first attempt and last few attempts
+      if (i === 0 || i >= maxRetries - 3) {
+        console.log(`Database not ready, retrying... (attempt ${i + 1}/${maxRetries})`);
+      }
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
@@ -62,46 +64,36 @@ async function waitForDatabase(maxRetries = 30, delayMs = 2000) {
  */
 async function initializeApp() {
   try {
-    console.log('[testing] Initializing application...');
-    console.log('[testing] DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'NOT SET - This will cause connection failure');
-
     // Wait for database to be available
-    console.log('[testing] Waiting for database connection...');
     await waitForDatabase();
 
     // Initialize database connection
-    console.log('[testing] Connecting to database...');
     initPool(process.env.DATABASE_URL);
     
     // Initialize database schema
-    console.log('[testing] Initializing database schema...');
     await initSchema();
 
     // Ensure upload directory exists
     const fs = require('fs');
     if (!fs.existsSync(SFTP_UPLOAD_DIR)) {
       fs.mkdirSync(SFTP_UPLOAD_DIR, { recursive: true });
-      console.log(`[testing] Created upload directory: ${SFTP_UPLOAD_DIR}`);
     }
 
     // Start SFTP directory watcher
-    console.log('[testing] Starting SFTP directory watcher...');
     watchSftpDirectory(SFTP_UPLOAD_DIR);
 
     // Initialize cron scheduler
-    console.log('[testing] Initializing cron scheduler...');
     await initializeScheduler();
 
     // Start server
     app.listen(PORT, () => {
-      console.log(`[testing] Server running on port ${PORT}`);
-      console.log(`[testing] Web UI available at http://localhost:${PORT}`);
-      console.log(`[testing] API available at http://localhost:${PORT}/api`);
-      console.log(`[testing] Watching SFTP directory: ${SFTP_UPLOAD_DIR}`);
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Web UI: http://localhost:${PORT}`);
+      console.log(`API: http://localhost:${PORT}/api`);
     });
   } catch (error) {
-    console.error('[testing] Failed to initialize application:', error);
-    console.error('[testing] Error details:', {
+    console.error('Failed to initialize application:', error);
+    console.error('Error details:', {
       message: error.message,
       code: error.code,
       address: error.address,
@@ -110,9 +102,9 @@ async function initializeApp() {
     
     // If DATABASE_URL is not set, provide helpful error message
     if (!process.env.DATABASE_URL) {
-      console.error('[testing] DATABASE_URL environment variable is not set.');
-      console.error('[testing] In Railway, make sure you have added a PostgreSQL service and linked it to this service.');
-      console.error('[testing] Railway should automatically provide the DATABASE_URL variable.');
+      console.error('DATABASE_URL environment variable is not set.');
+      console.error('In Railway, make sure you have added a PostgreSQL service and linked it to this service.');
+      console.error('Railway should automatically provide the DATABASE_URL variable.');
     }
     
     process.exit(1);
@@ -121,12 +113,10 @@ async function initializeApp() {
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('[testing] SIGTERM received, shutting down gracefully...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('[testing] SIGINT received, shutting down gracefully...');
   process.exit(0);
 });
 

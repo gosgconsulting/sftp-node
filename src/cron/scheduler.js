@@ -16,15 +16,15 @@ const activeJobs = new Map();
  * @returns {Promise<void>}
  */
 async function initializeScheduler() {
-  console.log('[testing] Initializing cron scheduler...');
-  
   const cronjobs = await getEnabledCronjobs();
   
   for (const job of cronjobs) {
     await scheduleJob(job);
   }
   
-  console.log(`[testing] Scheduler initialized with ${activeJobs.size} active jobs`);
+  if (activeJobs.size > 0) {
+    console.log(`Cron scheduler initialized with ${activeJobs.size} active job(s)`);
+  }
 }
 
 /**
@@ -37,7 +37,7 @@ async function scheduleJob(cronjob) {
 
   // Validate cron expression
   if (!cron.validate(schedule)) {
-    console.error(`[testing] Invalid cron schedule for job ${name}: ${schedule}`);
+    console.error(`Invalid cron schedule for job ${name}: ${schedule}`);
     await logExecution(id, 'failed', null, `Invalid cron schedule: ${schedule}`);
     return;
   }
@@ -50,10 +50,8 @@ async function scheduleJob(cronjob) {
 
   // Create new scheduled task
   const task = cron.schedule(schedule, async () => {
-    console.log(`[testing] Executing cronjob: ${name} (ID: ${id})`);
-    
     // Log execution start
-    const execution = await logExecution(id, 'running');
+    await logExecution(id, 'running');
     
     try {
       // Execute the command
@@ -64,13 +62,10 @@ async function scheduleJob(cronjob) {
 
       const output = stdout || stderr || 'Command executed successfully';
       await logExecution(id, 'completed', output);
-      
-      console.log(`[testing] Cronjob ${name} completed successfully`);
     } catch (error) {
       const errorMessage = error.message || 'Unknown error';
       await logExecution(id, 'failed', null, errorMessage);
-      
-      console.error(`[testing] Cronjob ${name} failed:`, errorMessage);
+      console.error(`Cronjob "${name}" failed:`, errorMessage);
     }
   }, {
     scheduled: true,
@@ -78,7 +73,6 @@ async function scheduleJob(cronjob) {
   });
 
   activeJobs.set(id, task);
-  console.log(`[testing] Scheduled cronjob: ${name} with schedule: ${schedule}`);
 }
 
 /**
@@ -89,7 +83,6 @@ function stopJob(cronjobId) {
   if (activeJobs.has(cronjobId)) {
     activeJobs.get(cronjobId).stop();
     activeJobs.delete(cronjobId);
-    console.log(`[testing] Stopped cronjob ID: ${cronjobId}`);
   }
 }
 
@@ -110,9 +103,8 @@ async function restartJob(cronjob) {
  * Stop all scheduled jobs
  */
 function stopAllJobs() {
-  activeJobs.forEach((task, id) => {
+  activeJobs.forEach((task) => {
     task.stop();
-    console.log(`[testing] Stopped cronjob ID: ${id}`);
   });
   activeJobs.clear();
 }

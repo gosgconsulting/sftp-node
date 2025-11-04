@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
     const result = await query(queryText, params);
     res.json(result.rows);
   } catch (error) {
-    console.error('[testing] Error fetching files:', error);
+    console.error('Error fetching files:', error);
     res.status(500).json({ error: 'Failed to fetch files' });
   }
 });
@@ -46,7 +46,7 @@ router.get('/:id', async (req, res) => {
     
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('[testing] Error fetching file:', error);
+    console.error('Error fetching file:', error);
     res.status(500).json({ error: 'Failed to fetch file' });
   }
 });
@@ -69,7 +69,7 @@ router.get('/stats/summary', async (req, res) => {
     
     res.json(stats.rows[0]);
   } catch (error) {
-    console.error('[testing] Error fetching file stats:', error);
+    console.error('Error fetching file stats:', error);
     res.status(500).json({ error: 'Failed to fetch file statistics' });
   }
 });

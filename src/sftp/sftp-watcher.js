@@ -9,7 +9,7 @@ const { processFile } = require('../handlers/file-handler');
  * @param {string} uploadDir - Directory to watch
  */
 function watchSftpDirectory(uploadDir) {
-  console.log(`[testing] Starting SFTP directory watcher on: ${uploadDir}`);
+  // SFTP directory watcher started
 
   const watcher = chokidar.watch(uploadDir, {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
@@ -23,11 +23,10 @@ function watchSftpDirectory(uploadDir) {
 
   watcher
     .on('add', async (filePath) => {
-      console.log(`[testing] New file detected: ${filePath}`);
       await handleNewFile(filePath);
     })
     .on('error', (error) => {
-      console.error(`[testing] Watcher error:`, error);
+      console.error('Watcher error:', error);
     });
 
   return watcher;
@@ -69,7 +68,6 @@ async function handleNewFile(filePath) {
     ]);
 
     const fileId = result.rows[0].id;
-    console.log(`[testing] File registered in database: ${filename} (ID: ${fileId})`);
 
     // Process the file
     try {
@@ -80,10 +78,8 @@ async function handleNewFile(filePath) {
         'UPDATE file_uploads SET status = $1, processed_at = $2 WHERE id = $3',
         ['completed', new Date(), fileId]
       );
-      
-      console.log(`[testing] File processed successfully: ${filename}`);
     } catch (error) {
-      console.error(`[testing] Error processing file ${filename}:`, error);
+      console.error(`Error processing file ${filename}:`, error);
       
       // Update status to failed
       await query(
@@ -92,7 +88,7 @@ async function handleNewFile(filePath) {
       );
     }
   } catch (error) {
-    console.error(`[testing] Error handling new file ${filePath}:`, error);
+    console.error(`Error handling new file ${filePath}:`, error);
   }
 }
 
