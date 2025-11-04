@@ -35,11 +35,39 @@ app.get('/', (req, res) => {
 });
 
 /**
+ * Wait for database to be available with retries
+ * @param {number} maxRetries - Maximum number of retry attempts
+ * @param {number} delayMs - Delay between retries in milliseconds
+ */
+async function waitForDatabase(maxRetries = 30, delayMs = 2000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const testPool = initPool();
+      const client = await testPool.connect();
+      client.release();
+      console.log('[testing] Database connection successful');
+      return true;
+    } catch (error) {
+      if (i === maxRetries - 1) {
+        throw error;
+      }
+      console.log(`[testing] Database not ready, retrying in ${delayMs}ms... (attempt ${i + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
+/**
  * Initialize application
  */
 async function initializeApp() {
   try {
     console.log('[testing] Initializing application...');
+    console.log('[testing] DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'NOT SET - This will cause connection failure');
+
+    // Wait for database to be available
+    console.log('[testing] Waiting for database connection...');
+    await waitForDatabase();
 
     // Initialize database connection
     console.log('[testing] Connecting to database...');
@@ -73,6 +101,20 @@ async function initializeApp() {
     });
   } catch (error) {
     console.error('[testing] Failed to initialize application:', error);
+    console.error('[testing] Error details:', {
+      message: error.message,
+      code: error.code,
+      address: error.address,
+      port: error.port,
+    });
+    
+    // If DATABASE_URL is not set, provide helpful error message
+    if (!process.env.DATABASE_URL) {
+      console.error('[testing] DATABASE_URL environment variable is not set.');
+      console.error('[testing] In Railway, make sure you have added a PostgreSQL service and linked it to this service.');
+      console.error('[testing] Railway should automatically provide the DATABASE_URL variable.');
+    }
+    
     process.exit(1);
   }
 }

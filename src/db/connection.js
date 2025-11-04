@@ -13,11 +13,19 @@ let pool = null;
  */
 function initPool(connectionString) {
   if (!pool) {
+    const dbUrl = connectionString || process.env.DATABASE_URL;
+    
+    if (!dbUrl) {
+      throw new Error('DATABASE_URL environment variable is not set. Please configure it in Railway.');
+    }
+    
+    console.log('[testing] Connecting to database:', dbUrl.replace(/:[^:@]+@/, ':****@')); // Hide password in logs
+    
     pool = new Pool({
-      connectionString: connectionString || process.env.DATABASE_URL,
+      connectionString: dbUrl,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000, // Increased timeout
     });
 
     pool.on('error', (err) => {
