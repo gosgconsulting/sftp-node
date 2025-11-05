@@ -12,15 +12,16 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "pg": "^8.11.3",
-    "node-cron": "^3.0.3",
     "chokidar": "^3.5.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "multer": "^1.4.5-lts.1"
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
+    "@railway/cli": "^4.11.0",
     "nodemon": "^3.0.2"
   }
 }

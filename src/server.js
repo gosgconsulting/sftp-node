@@ -9,7 +9,9 @@ const cronjobsRouter = require('./routes/cronjobs');
 const filesRouter = require('./routes/files');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Use WEB_PORT for web server, fallback to PORT if not 22 (SFTP port)
+// Railway sets PORT=22 when exposing SFTP, so we use WEB_PORT for HTTP server
+const PORT = process.env.WEB_PORT || (process.env.PORT && process.env.PORT !== '22' ? process.env.PORT : 3000);
 const SFTP_UPLOAD_DIR = process.env.SFTP_UPLOAD_DIR || '/home/sftpuser/uploads';
 
 // Middleware
