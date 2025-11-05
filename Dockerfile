@@ -10,6 +10,8 @@ RUN apt-get update && \
     openssh-client \
     curl \
     ca-certificates \
+    net-tools \
+    iproute2 \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean \
@@ -78,10 +80,19 @@ trap cleanup SIGTERM SIGINT\n\
 echo "Starting SSH daemon..."\n\
 # Generate host keys if they don't exist\n\
 if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then\n\
+    echo "Generating SSH host keys..."\n\
     ssh-keygen -A\n\
 fi\n\
-# Start SSH daemon and listen on all interfaces\n\
-/usr/sbin/sshd -D -e &\n\
+# Verify SSH configuration\n\
+echo "Testing SSH configuration..."\n\
+/usr/sbin/sshd -t\n\
+if [ $? -ne 0 ]; then\n\
+    echo "ERROR: SSH configuration test failed"\n\
+    exit 1\n\
+fi\n\
+# Start SSH daemon and listen on all interfaces with verbose logging\n\
+echo "Starting SSH daemon on port 22..."\n\
+/usr/sbin/sshd -D -e -d &\n\
 SSH_PID=$!\n\
 \n\
 # Wait a moment for SSH to start and verify it's running\n\
@@ -90,7 +101,13 @@ if ! ps -p $SSH_PID > /dev/null; then\n\
     echo "ERROR: SSH daemon failed to start"\n\
     exit 1\n\
 fi\n\
-echo "SSH daemon started (PID: $SSH_PID)"\n\
+# Verify SSH is listening on port 22\n\
+if netstat -tlnp 2>/dev/null | grep -q ":22 "; then\n\
+    echo "SSH daemon started successfully (PID: $SSH_PID), listening on port 22"\n\
+else\n\
+    echo "WARNING: SSH daemon started but may not be listening on port 22"\n\
+    netstat -tlnp || ss -tlnp\n\
+fi\n\
 \n\
 # Start Node.js application in background\n\
 echo "Starting Node.js application..."\n\
