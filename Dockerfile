@@ -26,7 +26,14 @@ RUN useradd -m -s /bin/bash sftpuser && \
     chown -R sftpuser:sftpuser /home/sftpuser
 
 # Configure SSH for SFTP with chroot
-RUN echo 'Match User sftpuser\n\
+RUN echo 'Port 22\n\
+ListenAddress 0.0.0.0\n\
+PermitRootLogin no\n\
+PasswordAuthentication yes\n\
+PubkeyAuthentication yes\n\
+Subsystem sftp internal-sftp\n\
+\n\
+Match User sftpuser\n\
     ChrootDirectory /home/sftpuser\n\
     ForceCommand internal-sftp\n\
     AllowTcpForwarding no\n\
@@ -69,11 +76,21 @@ trap cleanup SIGTERM SIGINT\n\
 \n\
 # Start SSH daemon in background\n\
 echo "Starting SSH daemon..."\n\
-/usr/sbin/sshd -D &\n\
+# Generate host keys if they don't exist\n\
+if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then\n\
+    ssh-keygen -A\n\
+fi\n\
+# Start SSH daemon and listen on all interfaces\n\
+/usr/sbin/sshd -D -e &\n\
 SSH_PID=$!\n\
 \n\
-# Wait a moment for SSH to start\n\
-sleep 2\n\
+# Wait a moment for SSH to start and verify it's running\n\
+sleep 3\n\
+if ! ps -p $SSH_PID > /dev/null; then\n\
+    echo "ERROR: SSH daemon failed to start"\n\
+    exit 1\n\
+fi\n\
+echo "SSH daemon started (PID: $SSH_PID)"\n\
 \n\
 # Start Node.js application in background\n\
 echo "Starting Node.js application..."\n\
